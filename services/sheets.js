@@ -7,7 +7,10 @@ let sheetsClient = null;
 let spreadsheetId = null;
 
 function getAuth() {
-  const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_B64
+    ? Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_B64, 'base64').toString('utf8')
+    : process.env.GOOGLE_SERVICE_ACCOUNT;
+  const creds = JSON.parse(raw);
   return new google.auth.GoogleAuth({
     credentials: creds,
     scopes: [

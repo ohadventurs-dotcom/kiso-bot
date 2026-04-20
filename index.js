@@ -4,6 +4,30 @@ const app = express();
 app.use(express.json());
 
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+
+async function sendMessage(to, text) {
+  const res = await fetch(
+    `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to,
+        type: 'text',
+        text: { body: text },
+      }),
+    }
+  );
+  const data = await res.json();
+  if (!res.ok) console.error('Send error:', JSON.stringify(data));
+  return data;
+}
 
 // Meta webhook verification
 app.get('/webhook', (req, res) => {
@@ -20,18 +44,18 @@ app.get('/webhook', (req, res) => {
 });
 
 // Incoming messages
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
   const body = req.body;
 
   if (body.object === 'whatsapp_business_account') {
-    const entry = body.entry?.[0];
-    const changes = entry?.changes?.[0];
-    const message = changes?.value?.messages?.[0];
+    const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
-    if (message) {
+    if (message?.type === 'text') {
       const from = message.from;
-      const text = message.text?.body;
+      const text = message.text.body;
       console.log(`Message from ${from}: ${text}`);
+
+      await sendMessage(from, `קיבלתי: "${text}" — הבוט של קיסו בקרוב כאן 🍽️`);
     }
   }
 

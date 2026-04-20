@@ -10,6 +10,7 @@ import {
   clearHandoff,
   getHostessPhones,
   getTimedOutHandoffs,
+  hasPendingHandoffs,
 } from './services/handoff.js';
 
 const app = express();
@@ -172,7 +173,7 @@ async function askClaude(user, userMessage) {
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 300,
-    system: SYSTEM_PROMPT,
+    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     messages: trimmed,
   });
 
@@ -194,10 +195,10 @@ async function notifyHostess(customerPhone, question) {
 // ── Main message router ───────────────────────────────────────────────────────
 
 async function handleMessage(from, text) {
-  // hostess reply
-  if (isHostess(from)) {
+  // hostess reply — only if there's an active handoff pending
+  if (isHostess(from) && hasPendingHandoffs()) {
     if (text.trim() === '✅') {
-      return null; // bot takes back over silently — no reply needed to hostess
+      return null;
     }
     const resolved = resolveHandoff(text);
     if (resolved) {

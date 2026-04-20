@@ -51,6 +51,10 @@ export function clearHandoff(customerPhone) {
 }
 
 // Check for timed-out handoffs — returns list of customerPhones that timed out
+export function hasPendingHandoffs() {
+  return pendingHandoffs.size > 0;
+}
+
 export function getTimedOutHandoffs() {
   const timedOut = [];
   const now = Date.now();

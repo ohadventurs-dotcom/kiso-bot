@@ -55,7 +55,11 @@ app.post('/webhook', async (req, res) => {
       const text = message.text.body;
       console.log(`Message from ${from}: ${text}`);
 
-      await sendMessage(from, `קיבלתי: "${text}" — הבוט של קיסו בקרוב כאן 🍽️`);
+      console.log(`Sending reply to ${from}...`);
+      const result = await sendMessage(from, `קיבלתי: "${text}" — הבוט של קיסו בקרוב כאן 🍽️`);
+      console.log(`Reply result: ${JSON.stringify(result)}`);
+    } else {
+      console.log(`Non-text event: ${message?.type || 'no message'}`);
     }
   }
 

@@ -44,13 +44,13 @@ export async function initSheet() {
   const sheets = await getSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'A1:G1',
+    range: 'Sheet1!A1:G1',
   });
 
   if (!res.data.values || res.data.values.length === 0) {
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'A1:G1',
+      range: 'Sheet1!A1:G1',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [['תאריך', 'שעה', 'שם', 'טלפון', 'מספר סועדים', 'סניף', 'נוצר ב']],
@@ -69,7 +69,7 @@ export async function appendReservation({ date, time, name, phone, partySize, br
   const sheets = await getSheets();
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: 'הזמנות!A:G',
+    range: 'Sheet1!A:G',
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[date, time, name, phone, partySize, branchId, new Date().toLocaleString('he-IL')]],

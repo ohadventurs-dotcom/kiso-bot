@@ -2,6 +2,7 @@ import express from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import { branches, DEFAULT_BRANCH } from './config/branches.js';
 import { getAvailableSlots, createReservation } from './services/reservations.js';
+import { initSheet, appendReservation } from './services/sheets.js';
 import {
   isHostess,
   createHandoff,
@@ -148,6 +149,7 @@ async function handleReservation(from, text, user) {
   if (state.step === 'confirm') {
     if (text.includes('כן') || text.includes('אישור')) {
       createReservation({ ...state.data, branchId: state.branchId, phone: from });
+      appendReservation({ ...state.data, branchId: state.branchId, phone: from }).catch(e => console.error('Sheets error:', e.message));
       state.step = 'done';
       const { date, time, partySize, name } = state.data;
       return `מעולה, שמרנו לך מקום.\n${name}, ${partySize} איש, ${date} בשעה ${time}.\nמחכים לך!`;
@@ -312,4 +314,7 @@ app.post('/webhook', async (req, res) => {
 
 app.get('/health', (_, res) => res.send('OK'));
 
-app.listen(process.env.PORT || 3000, () => console.log('Bot server running'));
+app.listen(process.env.PORT || 3000, async () => {
+  console.log('Bot server running');
+  await initSheet().catch(e => console.error('Sheet init error:', e.message));
+});

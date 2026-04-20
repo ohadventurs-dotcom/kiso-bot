@@ -34,47 +34,31 @@ async function getDrive() {
 }
 
 export async function initSheet() {
-  if (process.env.SHEET_ID) {
-    spreadsheetId = process.env.SHEET_ID;
-    console.log(`Using existing sheet: ${spreadsheetId}`);
+  if (!process.env.SHEET_ID) {
+    console.error('SHEET_ID env var not set — reservations will not be saved to Sheets');
     return;
   }
+  spreadsheetId = process.env.SHEET_ID;
 
+  // ensure header row exists
   const sheets = await getSheets();
-
-  // create new spreadsheet
-  const res = await sheets.spreadsheets.create({
-    requestBody: {
-      properties: { title: SHEET_TITLE },
-      sheets: [{
-        properties: { title: 'הזמנות' },
-        data: [{
-          startRow: 0,
-          startColumn: 0,
-          rowData: [{
-            values: ['תאריך', 'שעה', 'שם', 'טלפון', 'מספר סועדים', 'סניף', 'נוצר ב'].map(v => ({
-              userEnteredValue: { stringValue: v },
-              userEnteredFormat: { textFormat: { bold: true } },
-            })),
-          }],
-        }],
-      }],
-    },
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'A1:G1',
   });
 
-  spreadsheetId = res.data.spreadsheetId;
-  console.log(`Created sheet: ${spreadsheetId}`);
+  if (!res.data.values || res.data.values.length === 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'A1:G1',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [['תאריך', 'שעה', 'שם', 'טלפון', 'מספר סועדים', 'סניף', 'נוצר ב']],
+      },
+    });
+  }
 
-  // share with owner
-  const drive = await getDrive();
-  await drive.permissions.create({
-    fileId: spreadsheetId,
-    requestBody: { type: 'user', role: 'writer', emailAddress: OWNER_EMAIL },
-    sendNotificationEmail: false,
-  });
-
-  console.log(`Sheet shared with ${OWNER_EMAIL}`);
-  console.log(`Set SHEET_ID=${spreadsheetId} in Railway to persist across restarts`);
+  console.log(`Sheet ready: ${spreadsheetId}`);
 }
 
 export async function appendReservation({ date, time, name, phone, partySize, branchId }) {
